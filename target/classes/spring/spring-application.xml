@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:lang="http://www.springframework.org/schema/lang"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:oxm="http://www.springframework.org/schema/oxm"
+	xmlns:stat="http://www.alibaba.com/schema/stat"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/oxm http://www.springframework.org/schema/oxm/spring-oxm-4.3.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.3.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd
+		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.3.xsd
+		http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+		http://www.alibaba.com/schema/stat http://www.alibaba.com/schema/stat.xsd">
+		
+<!-- Spring注解配置定时任务  首先在配置文件头部的必须要有task 其次xsi:schemaLocation必须为其添加spring-task -->
+<!--  spring扫描过程必须涵盖定时任务类所在的目录 然后设置动作启用定时任务 也就是下面的语句 -->
+	<task:annotation-driven />
+
+	<tx:annotation-driven />
+
+	<aop:config proxy-target-class="true"></aop:config>
+
+	<!-- 把资源配置文件导入到Spring中 ，NameSpace里面的context -->
+	<context:property-placeholder location="classpath:jdbc.properties" />
+
+	<!-- quarzt的持久化 -->
+	<bean id="schedulerFactoryBean"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean" />
+
+	<!-- 引入comment的扫描组件 -->
+	<context:component-scan base-package="com.ndc">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+
+	<!-- 阿里巴巴druid连接池 -->
+	<bean id="dataSourceProxool" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<property name="driverClassName" value="${database.driverClassName}" />
+		<property name="url" value="${database.url}" />
+		<property name="username" value="${database.username}" />
+		<property name="password" value="${database.password}" />
+		<property name="initialSize" value="${database.initialSize}" />
+		<property name="maxActive" value="${database.maxActive}" />
+		<property name="minIdle" value="${database.minIdle}" />
+		<property name="maxWait" value="${database.maxWait}" />
+		<property name="validationQuery" value="${database.validationQuery}" />
+		<property name="testOnBorrow" value="${database.testOnBorrow}" />
+		<property name="testOnReturn" value="${database.testOnReturn}" />
+		<property name="testWhileIdle" value="${database.testWhileIdle}" />
+		<property name="timeBetweenEvictionRunsMillis" value="${database.timeBetweenEvictionRunsMillis}" />
+		<property name="filters" value="${database.filters}" />
+		<!-- 配置监控统计拦截的filters -->
+		<property name="proxyFilters">
+			<list>
+				<ref bean="stat-filter" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="stat-filter" class="com.alibaba.druid.filter.stat.StatFilter">
+		<!--慢SQL统计，如果SQL执行时间超过一定时间则记录为慢SQL -->
+		<property name="slowSqlMillis" value="2000" />
+		<!--慢SQL统计日志输出 -->
+		<property name="logSlowSql" value="true" />
+		<!--合并SQL统计 例如select * from table t where t.id =1，会被变为select * from table 
+			t where t.id =？来统计 -->
+		<property name="mergeSql" value="true" />
+	</bean>
+
+	<!-- Stat监控,打开监控统计 -->
+	<bean id="druid-stat-interceptor"
+		class="com.alibaba.druid.support.spring.stat.DruidStatInterceptor">
+	</bean>
+	<!-- -->
+
+	<!-- 开启Spring监控 -->
+	<bean id="druid-stat-pointcut" class="org.springframework.aop.support.JdkRegexpMethodPointcut"
+		scope="prototype">
+		<property name="patterns">
+			<list>
+				<value>com.ndc.service.*</value>
+				<value>com.ndc.mapper.*</value>
+			</list>
+		</property>
+	</bean>
+	<aop:config>
+		<aop:advisor advice-ref="druid-stat-interceptor"
+			pointcut-ref="druid-stat-pointcut" />
+	</aop:config>
+
+	<!-- 阿里巴巴druid连接池 -->
+	<!--    如果 MyBatis 映射器 XML 文件在和映射器类相同的路径下不存在,那么另外一个需要 配置文件的原因就是它了。使用这个配置,有两种选择。第一是手动在 
+		MyBatis 的 XML 配 置文件中使用<mappers>部分来指定类路径。第二是使用工厂 bean 的 mapperLocations 属 
+		性。mapperLocations 属性使用一个资源位置的 list。 这个属性可以用来指定 MyBatis 的 XML 映射器文件的位置。 它的值可以包含 
+		Ant 样式来加载一个目录中所有文件, 或者从基路径下 递归搜索所有路径。 -->
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- <property name="configLocation" value="classpath:" /> -->
+		<property name="dataSource" ref="dataSourceProxool" />
+		<!-- mapperLocations：它表示我们的Mapper文件存放的位置， 就是Mybatis生成的实体类对象和对应的Mapper文件 
+			当我们的Mapper文件 跟对应 的Mapper接口处于同一位置的时候可以不用指定该属性的值。 -->
+		<property name="mapperLocations">
+			<array>
+				<value>classpath:mapper/*.xml</value>
+			</array>
+		</property>
+		<!-- configLocation：用于指定Mybatis的配置文件位置。 -->
+		<!--如果指定了该属性，那么会以该配置文件的内容作为配置信息构建对应的SqlSessionFactoryBuilder，但是后续属性指定的内容会覆盖该配置文件里面指定的对应内容。 -->
+		<!-- <property name="configLocation" value="classpath:spring-mybatis.xml"></property> -->
+		<!-- typeAliasesPackage：它一般对应我们的实体类所在的包，这个时候会自动取对应包中不包括包名的简单类名作为包括包名的别名。多个package之间可以用逗号或者分号等来进行分隔。(value的值一定要是包的全名) -->
+		<property name="typeAliasesPackage" value="com.ndc.entity"></property>
+		<!-- typeAliases：数组类型，用来指定别名的。指定了这个属性后，Mybatis会把这个类型的短名称作为这个类型的别名，前提是该类上没有标注 -->
+		<!-- plugins：数组类型，用来指定Mybatis的Interceptor。  typeHandlersPackage：用来指定TypeHandler所在的包，如果指定了该属性，SqlSessionFactoryBean会自动把该包下面的类注册为对应的TypeHandler。多个package之间可以用逗号或者分号等来进行分隔。 
+			 typeHandlers：数组类型，表示TypeHandler。 -->
+		<property name="plugins">
+			<array><!-- 拦截器 com.github.pagehelper.PageInterceptor 原来的 dialect 变成了 
+					helperDialect，这是基于 PageHelper方式的分页 -->
+				<bean class="com.github.pagehelper.PageInterceptor"><!-- 坑爹的PageHelper更新了，所以以前网上的配置方法有毒。。。。。。。 -->
+					<property name="properties">
+						<value>
+							<!-- 4.0.0以后版本可以不设置该参数  -->
+							helpDialect=mysql
+							<!-- always总是返回PageInfo类型,check检查返回类型是否为PageInfo,none返回Page  -->
+							returnPageInfo=check
+							 <!-- 该参数默认为false  -->
+							 <!-- 设置为true时，会将RowBounds第一个参数offset当成pageNum页码使用  -->
+							 <!-- 和startPage中的pageNum效果一样 -->
+							offsetAsPageNum=true 
+							 <!-- 该参数默认为false  -->
+							 <!-- 设置为true时，使用RowBounds分页会进行count查询  -->
+							rowBoundsWithCount=true 
+							 <!-- 设置为true时，如果pageSize=0或者RowBounds.limit = 0就会查询出全部的结果  -->
+							 <!-- （相当于没有执行分页查询，但是返回结果仍然是Page类型） -->
+							 pageSizeZero=true 
+							  <!-- 3.3.0版本可用 - 分页参数合理化，默认false禁用  -->
+							 <!-- 启用合理化时，如果pageNum<1会查询第一页，如果pageNum>pages会查询最后一页  -->
+							 <!-- 禁用合理化时，如果pageNum<1或pageNum>pages会返回空数据  -->
+							reasonable=true
+							  <!-- 支持通过Mapper接口参数来传递分页参数  -->
+							supportMethodsArguments=true  
+						</value>
+					</property>
+				</bean>
+				<bean class="tk.mybatis.orderbyhelper.OrderByHelper" />
+			</array>
+		</property>
+	</bean>
+
+	<!-- 事务管理器 -->
+	<bean name="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSourceProxool" />
+	</bean>
+
+</beans>
