@@ -16,7 +16,7 @@
 		<druid.version>1.0.26</druid.version>
 		<quartz.version>2.2.1</quartz.version>
 		<log4j.version>1.7.21</log4j.version>
-		<fastjson.version>1.2.24</fastjson.version>
+		<fastjson.version>1.2.31</fastjson.version>
 		<jstl.version>1.2</jstl.version>
 		<xwork.version>2.3.31</xwork.version>
 		<struts.version>2.3.14</struts.version>
@@ -214,7 +214,7 @@
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
-			<version>1.2.24</version>
+			<version>1.2.31</version>
 		</dependency>
 
 		<!-- jstl -->
