@@ -8,7 +8,7 @@
 	<description>这是迈向成功的一小步，也是迈向失败的一大步</description>
 	<!-- 项目中的参数设置 -->
 	<properties>
-		<spring.version>4.3.3.RELEASE</spring.version>
+		<spring.version>4.3.18</spring.version>
 		<junit.version>4.11</junit.version>
 		<mysql.version>5.1.39</mysql.version>
 		<mybatis.version>3.4.1</mybatis.version>
