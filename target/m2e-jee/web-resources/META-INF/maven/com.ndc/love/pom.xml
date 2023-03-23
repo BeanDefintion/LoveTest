@@ -19,7 +19,7 @@
 		<fastjson.version>1.2.31</fastjson.version>
 		<jstl.version>1.2</jstl.version>
 		<xwork.version>2.3.31</xwork.version>
-		<struts.version>2.3.14</struts.version>
+		<struts.version>2.5.30</struts.version>
 		<pageHelper.version>5.0.0</pageHelper.version>
 		<OrderByHelper.version>0.0.1</OrderByHelper.version>
 		<project.build.sourceencoding>UTF-8</project.build.sourceencoding>
